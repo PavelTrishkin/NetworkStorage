@@ -61,14 +61,42 @@ public class Controller implements Initializable {
                                 fos.write(buffer, 0, count);
                             }
                         }
+                        fos.flush();
                     }
                     lv.getItems().add(op[1]);
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        } else {
-//             TODO: 7/23/2020 upload
+        } else if(op[0].equals("./upload")) {
+            try {
+                os.writeUTF(op[0]);
+                os.writeUTF(op[1]);
+                System.out.println("find file with name: " + op[1]);
+                File file = new File(clientFilesPath + "/" + op[1]);
+                if (file.exists()) {
+                    os.writeUTF("OK");
+                    long len = file.length();
+                    os.writeLong(len);
+                    FileInputStream fis = new FileInputStream(file);
+                    byte[] buffer = new byte[1024];
+                    while (fis.available() > 0) {
+                        int count = fis.read(buffer);
+                        if (count == -1){
+                            break;
+                        }
+                        os.write(buffer, 0, count);
+                    }
+                    fis.close();
+                } else {
+                    os.writeUTF("File not exists");
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        else {
+            System.out.println("Что то не так!");
         }
     }
 }

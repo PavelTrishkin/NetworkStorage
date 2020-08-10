@@ -8,10 +8,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class FileSender {
+
+    static ByteBuf buf = null;
+
     public static void sendFile(Path path, Channel channel, ChannelFutureListener finishListener) throws IOException {
         FileRegion region = new DefaultFileRegion(path.toFile(), 0, Files.size(path));
 
-        ByteBuf buf = null;
         buf = ByteBufAllocator.DEFAULT.directBuffer(1);
         buf.writeByte((byte) 25);
         channel.writeAndFlush(buf);
@@ -33,5 +35,8 @@ public class FileSender {
         if (finishListener != null) {
             transferOperationFuture.addListener(finishListener);
         }
+    }
+    public static void acceptFile(String command, String fileName, Path path){
+
     }
 }

@@ -6,6 +6,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.RandomAccessFile;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -48,7 +49,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
                 if (buf.readableBytes() >= nextLength) {
                     byte[] fileName = new byte[nextLength];
                     buf.readBytes(fileName);
-                    System.out.println("STATE: Filename received - _" + new String(fileName, "UTF-8"));
+                    System.out.println("STATE: Filename received - _" + new String(fileName, StandardCharsets.UTF_8));
                     File file = new File(serverFilePath + "/" + new String(fileName));
                     out = new BufferedOutputStream(new FileOutputStream(file));
                     currentState = State.FILE_LENGTH;

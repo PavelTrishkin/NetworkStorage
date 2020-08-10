@@ -40,11 +40,11 @@ public class Controller implements Initializable {
         String [] op = command.split(" ");
         if (op[0].equals("./download")) {
             try {
-                os.writeUTF(op[0]);
+                os.writeBytes("10");
                 os.writeUTF(op[1]);
-                String response = is.readUTF();
+                byte response = is.readByte();
                 System.out.println("resp: " + response);
-                if (response.equals("OK")) {
+                if (response == (byte)25) {
                     File file = new File(clientFilesPath + "/" + op[1]);
                     if (!file.exists()) {
                         file.createNewFile();

@@ -5,26 +5,26 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 
 import java.io.*;
-import java.net.Socket;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.ResourceBundle;
+import java.util.concurrent.CountDownLatch;
 
 public class Controller implements Initializable {
     public ListView<String> lv;
     public TextField txt;
     public Button send;
-    private Socket socket;
     private DataInputStream is;
     private DataOutputStream os;
     private final String clientFilesPath = "./src/main/resources/clientFiles";
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        CountDownLatch networkStarter = new CountDownLatch(1);
+        new Thread(() -> Network.getInstance().start(networkStarter)).start();
         try {
-            socket = new Socket("localhost", 8189);
-            is = new DataInputStream(socket.getInputStream());
-            os = new DataOutputStream(socket.getOutputStream());
-        } catch (IOException e) {
+            networkStarter.await();
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
         File dir = new File(clientFilesPath);
@@ -40,11 +40,11 @@ public class Controller implements Initializable {
         String [] op = command.split(" ");
         if (op[0].equals("./download")) {
             try {
-                os.writeUTF(op[0]);
+                os.writeBytes("10");
                 os.writeUTF(op[1]);
-                String response = is.readUTF();
+                byte response = is.readByte();
                 System.out.println("resp: " + response);
-                if (response.equals("OK")) {
+                if (response == (byte)25) {
                     File file = new File(clientFilesPath + "/" + op[1]);
                     if (!file.exists()) {
                         file.createNewFile();
@@ -70,33 +70,17 @@ public class Controller implements Initializable {
             }
         } else if(op[0].equals("./upload")) {
             try {
-                os.writeUTF(op[0]);
-                os.writeUTF(op[1]);
-                System.out.println("find file with name: " + op[1]);
-                File file = new File(clientFilesPath + "/" + op[1]);
-                if (file.exists()) {
-                    os.writeUTF("OK");
-                    long len = file.length();
-                    os.writeLong(len);
-                    FileInputStream fis = new FileInputStream(file);
-                    byte[] buffer = new byte[1024];
-                    while (fis.available() > 0) {
-                        int count = fis.read(buffer);
-                        if (count == -1){
-                            break;
-                        }
-                        os.write(buffer, 0, count);
+                FileSender.sendFile(Paths.get(clientFilesPath + "/" + op[1]), Network.getInstance().getCurrentChannel(), future -> {
+                    if (!future.isSuccess()) {
+                        future.cause().printStackTrace();
                     }
-                    fis.close();
-                } else {
-                    os.writeUTF("File not exists");
-                }
+                    if (future.isSuccess()) {
+                        System.out.println("Файл успешно передан");
+                    }
+                });
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
-        else {
-            System.out.println("Что то не так!");
         }
     }
 }

@@ -3,6 +3,8 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import util.Network;
+import network.FileSender;
 
 import java.io.*;
 import java.net.URL;
@@ -69,6 +71,7 @@ public class Controller implements Initializable {
                 e.printStackTrace();
             }
         } else if(op[0].equals("./upload")) {
+            System.out.println(op[1]);
             try {
                 FileSender.sendFile(Paths.get(clientFilesPath + "/" + op[1]), Network.getInstance().getCurrentChannel(), future -> {
                     if (!future.isSuccess()) {

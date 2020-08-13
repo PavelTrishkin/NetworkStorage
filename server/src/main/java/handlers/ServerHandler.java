@@ -1,14 +1,14 @@
+package handlers;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 
 public class ServerHandler extends ChannelInboundHandlerAdapter {
     public enum State {
@@ -21,13 +21,38 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
     private long receivedFileLength;
     private BufferedOutputStream out;
     private String serverFilePath = "./src/main/resources/serverFiles";
+    private String login;
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) {
+        System.out.println("Клиент подключился. Addr: " + ctx.channel().remoteAddress());
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) {
+        System.out.println("Клиент отключился. Addr: " + ctx.channel().remoteAddress() + " Login: " + login);
+        ctx.close();
+    }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         ByteBuf buf = ((ByteBuf) msg);
+        int num = buf.readByte();
+        System.out.println(num);
+        if (num == 1){
+            connection(buf);
+        }
+        if(num == 2){
+            getFileFromClient(buf);
+        }
+
+    }
+
+    private void getFileFromClient(ByteBuf buf) throws Exception{
         while (buf.readableBytes() > 0) {
             if (currentState == State.IDLE) {
                 byte readed = buf.readByte();
+                System.out.println(readed);
                 if (readed == (byte) 25) {
                     currentState = State.NAME_LENGTH;
                     receivedFileLength = 0L;
@@ -49,6 +74,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
                 if (buf.readableBytes() >= nextLength) {
                     byte[] fileName = new byte[nextLength];
                     buf.readBytes(fileName);
+                    System.out.println(Arrays.toString(fileName));
                     System.out.println("STATE: Filename received - _" + new String(fileName, StandardCharsets.UTF_8));
                     File file = new File(serverFilePath + "/" + new String(fileName));
                     out = new BufferedOutputStream(new FileOutputStream(file));
@@ -82,9 +108,25 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
+    public void connection (ByteBuf buf){
+
+        while (buf.readableBytes() > 0){
+            int loginLength = buf.readInt();
+            byte[] log = new byte[loginLength];
+            login = new String(log);
+        }
+        System.out.println(login);
+        buf.release();
+//        this.login = buf.toString();
+    }
+
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        cause.printStackTrace();
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        if (cause instanceof IOException) {
+            System.out.println("Клиент разорвал соединение");
+        } else {
+            cause.printStackTrace();
+        }
         ctx.close();
     }
 }

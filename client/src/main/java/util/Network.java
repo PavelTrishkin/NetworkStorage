@@ -13,6 +13,8 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.CountDownLatch;
 
 public class Network {
+    private final int PORT = 8189;
+    private final String HOSTNAME = "localhost";
     private static Network ourInstance = new Network();
 
     public static Network getInstance() {
@@ -28,21 +30,34 @@ public class Network {
         return currentChannel;
     }
 
+    public void setOnUpdateCallBack(UpdateCallBack onUpdateCallBack){
+        currentChannel.pipeline().get(ClientHandler.class).setUpdateCallBack(onUpdateCallBack);
+    }
+
+    public void setOnFinishCallBack(FinishCallback onFinishCallBack){
+        currentChannel.pipeline().get(ClientHandler.class).setFinishCallBack(onFinishCallBack);
+    }
+
+    public void setOnAuthOkCallBack(AuthOkCallBack onAuthOkCallBack){
+        currentChannel.pipeline().get(ClientHandler.class).setAuthOkCallBack(onAuthOkCallBack);
+    }
+
     public void start(CountDownLatch countDownLatch) {
         EventLoopGroup group = new NioEventLoopGroup();
         try {
             Bootstrap clientBootstrap = new Bootstrap();
             clientBootstrap.group(group)
                     .channel(NioSocketChannel.class)
-                    .remoteAddress(new InetSocketAddress("localhost", 8189))
+                    .remoteAddress(new InetSocketAddress(HOSTNAME, PORT))
                     .handler(new ChannelInitializer<SocketChannel>() {
                         protected void initChannel(SocketChannel socketChannel) throws Exception {
-                            socketChannel.pipeline().addLast();
+                            socketChannel.pipeline().addLast(new ClientHandler());
                             currentChannel = socketChannel;
                         }
                     });
             ChannelFuture channelFuture = clientBootstrap.connect().sync();
             countDownLatch.countDown();
+            System.out.println("Подключение успешно");
             channelFuture.channel().closeFuture().sync();
         } catch (Exception e) {
             e.printStackTrace();

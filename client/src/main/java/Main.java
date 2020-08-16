@@ -4,9 +4,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import util.Network;
-
-import java.util.concurrent.CountDownLatch;
 
 public class Main extends Application {
 

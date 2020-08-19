@@ -71,12 +71,17 @@ public class ClientLeftPanelController{
         }
 
         filesTable.setOnMouseClicked(event -> {
-            if (event.getClickCount() == 2) {
-                Path path = Paths.get(pathField.getText()).resolve(filesTable.getSelectionModel().getSelectedItem().getFileName());
-                if (Files.isDirectory(path)) {
-                    updateList(path);
+            if (event.getClickCount() == 2)  {
+                try{
+                    Path path = Paths.get(pathField.getText()).resolve(filesTable.getSelectionModel().getSelectedItem().getFileName());
+                    if (Files.isDirectory(path)) {
+                        updateList(path);
+                    }
+                }catch (NullPointerException e){
+                    System.out.println("Что с этим делать? " + e);
                 }
             }
+
         });
         globalUpdateList();
     }

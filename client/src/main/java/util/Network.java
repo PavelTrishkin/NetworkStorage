@@ -30,6 +30,14 @@ public class Network {
         return currentChannel;
     }
 
+    public void setOnRegistrationFailedCallBack(RegistrationFailedCallBack onRegistrationFailedCallBack){
+        currentChannel.pipeline().get(ClientHandler.class).setRegistrationFailedCallBack(onRegistrationFailedCallBack);
+    }
+
+    public void setOnRegistrationOkCallBack(RegistrationOkCallBack onRegistrationOkCallBack){
+        currentChannel.pipeline().get(ClientHandler.class).setRegistrationOkCallBack(onRegistrationOkCallBack);
+    }
+
     public void setOnUpdateCallBack(UpdateCallBack onUpdateCallBack){
         currentChannel.pipeline().get(ClientHandler.class).setUpdateCallBack(onUpdateCallBack);
     }

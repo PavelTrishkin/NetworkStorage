@@ -18,6 +18,16 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
     private FinishCallback finishCallBack;
     private UpdateCallBack updateCallBack;
     private AuthOkCallBack authOkCallBack;
+    private RegistrationFailedCallBack registrationFailedCallBack;
+    private RegistrationOkCallBack registrationOkCallBack;
+
+    public void setRegistrationFailedCallBack(RegistrationFailedCallBack registrationFailedCallBack) {
+        this.registrationFailedCallBack = registrationFailedCallBack;
+    }
+
+    public void setRegistrationOkCallBack(RegistrationOkCallBack registrationOkCallBack) {
+        this.registrationOkCallBack = registrationOkCallBack;
+    }
 
     public void setAuthOkCallBack(AuthOkCallBack authOkCallBack) {
         this.authOkCallBack = authOkCallBack;
@@ -33,9 +43,12 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 
     private static final byte AUTH_BYTE = 10;
     private static final byte AUTH_BYTE_OK = 20;
-    private static final byte UPLOAD_FILE = 15;
+    private static final byte REGISTRATION_BYTE = 50;
+    private static final byte REGISTRATION_OK_BYTE = 55;
+    private static final byte REGISTRATION_FAILED_BYTE = 50;
     private static final byte DOWNLOAD_FILE = 25;
     private static final byte UPDATE_FILE_LIST = 30;
+    private static final byte ISLOGIN_BYTE = 45;
 
 
     private State currentState = State.IDLE;
@@ -45,9 +58,6 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
     private BufferedOutputStream out;
     public static String fileList;
 
-    public BufferedOutputStream getOut() {
-        return out;
-    }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -63,12 +73,15 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
                     fileList = new String(fileName, StandardCharsets.UTF_8);
                     System.out.println("Получен список файлов");
                     System.out.println(Arrays.toString(fileList.split("SEPARATOR")));
-                    try {
-                        updateCallBack.updateCallBack();
-                    }catch (NullPointerException e){
-                        System.out.println("Пришел пусто список файлов " + e);
-                    }
-
+                }
+                if (commandByte == ISLOGIN_BYTE){
+                    MainController.isLogin = true;
+                }
+                if(commandByte == REGISTRATION_FAILED_BYTE){
+                    registrationFailedCallBack.regFailCallBack();
+                }
+                if(commandByte == REGISTRATION_OK_BYTE){
+                    registrationOkCallBack.regOkCallback();
                 }
                 if(commandByte == UPDATE_FILE_LIST){
                     nextLength = buf.readInt();
@@ -77,11 +90,7 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
                     fileList = new String(fileName, StandardCharsets.UTF_8);
                     System.out.println("Получен список файлов");
                     System.out.println(Arrays.toString(fileList.split("SEPARATOR")));
-                    try {
-                        updateCallBack.updateCallBack();
-                    }catch (NullPointerException e){
-                        System.out.println("Пришел пусто список файлов " + e);
-                    }
+                    updateCallBack.updateCallBack();
                 }
                 if (commandByte == DOWNLOAD_FILE) {
                     System.out.println("Загружается файл");
@@ -220,4 +229,20 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
         System.out.println(new String(loginPassByte));
     }
 
+    public static void registration(String login, String pass, Channel channel){
+        String newUserLp = login + "DELIMETER" + pass;
+        byte[] newUserLpByte = newUserLp.getBytes(StandardCharsets.UTF_8);
+
+        ByteBuf buf = ByteBufAllocator.DEFAULT.directBuffer(1 + 4 + newUserLpByte.length);
+
+        System.out.println("Записали синальный байт на регистрацию");
+        buf.writeByte(REGISTRATION_BYTE);
+        System.out.println("Записали длину логина и пароля");
+        buf.writeInt(newUserLp.length());
+        System.out.println("Записали логин и пароль");
+        buf.writeBytes(newUserLpByte);
+        System.out.println("Отправили данные буфера");
+        channel.writeAndFlush(buf);
+        System.out.println(new String(newUserLpByte));
+    }
 }

@@ -42,6 +42,38 @@ public class SqlClient {
         return false;
     }
 
+    static synchronized boolean isRegisteredUser(String login){
+        try {
+            PreparedStatement statement = connection.prepareStatement(
+                    "SELECT * FROM users_tbl WHERE user_name = ?"
+            );
+            statement.setString(1, login);
+            ResultSet result = statement.executeQuery();
+            if (result.next()) {
+                return true;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    static synchronized boolean registration(String login, String password){
+        try {
+            PreparedStatement statement = connection.prepareStatement(
+                    "INSERT INTO users_tbl ('user_name', 'password') VALUES (?, ?)"
+            );
+            statement.setString(1, login);
+            statement.setString(2, password);
+            statement.execute();
+            System.out.println("Регистрация прошла успешно");
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     static synchronized void setIsLogin(String login, boolean isLogin) {
         try {
             PreparedStatement statement = connection.prepareStatement(

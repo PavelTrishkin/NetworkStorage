@@ -9,6 +9,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.SQLException;
 
 public class ServerHandler extends ChannelInboundHandlerAdapter {
 
@@ -19,10 +20,13 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
     private static final String SERVER_ROOT = "./server-storage-dir/";
     private static final byte AUTH_BYTE = 10;
     private static final byte AUTH_BYTE_OK = 20;
+    private static final byte ISLOGIN_BYTE = 45;
     private static final byte UPLOAD_FILE = 25;
     private static final byte DOWNLOAD_FILE = 15;
     private static final byte UPDATE_FILE_LIST = 30;
-
+    private static final byte REGISTRATION_BYTE = 50;
+    private static final byte REGISTRATION_OK_BYTE = 55;
+    private static final byte REGISTRATION_FAILED_BYTE = 50;
 
     private State currentState = State.IDLE;
     private int nextLength;
@@ -40,6 +44,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
         System.out.println("Клиент отключился. Addr: " + ctx.channel().remoteAddress() + " Login: " + login);
+        SqlClient.setIsLogin(login, false);
         ctx.close();
     }
 
@@ -54,6 +59,9 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
                     System.out.println("Получена команда на авторизацию пользователя");
                     receivedFileLength = 0L;
                     connection(ctx, buf);
+                }
+                if (commandByte == REGISTRATION_BYTE){
+                    registration(ctx, buf);
                 }
                 if (commandByte == UPLOAD_FILE) {
                     System.out.println("Получена команда на прием файла от клиента");
@@ -180,8 +188,13 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
         login = lpBefore[0];
         String pass = lpBefore[1];
         System.out.println("Логин " + login + " пароль " + pass);
-        if(SqlClient.authorise(login, pass)){
-            SqlClient.isLogin(login);
+        if(SqlClient.isLogin(login)) {
+            buf = ByteBufAllocator.DEFAULT.directBuffer(1);
+            buf.writeByte(ISLOGIN_BYTE);
+            ctx.channel().writeAndFlush(buf);
+        }
+        else if(SqlClient.authorise(login, pass)){
+            SqlClient.setIsLogin(login, true);
             File f = new File(SERVER_ROOT + login);
             if (!f.exists()) {
                 f.mkdir();
@@ -190,6 +203,29 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
             serverFileList(ctx.channel(), fileList);
             System.out.println("Авторизация прошла успешна");
         }
+    }
+
+    private void registration(ChannelHandlerContext ctx, ByteBuf buf){
+        nextLength = buf.readInt();
+        byte[] log = new byte[nextLength];
+        buf.readBytes(log);
+        String[] lpBefore = new String(log, StandardCharsets.UTF_8).split("DELIMETER");
+        login = lpBefore[0];
+        String pass = lpBefore[1];
+        System.out.println("Логин " + login + " пароль " + pass);
+        if (SqlClient.isRegisteredUser(login)){
+            buf = ByteBufAllocator.DEFAULT.directBuffer(1);
+            buf.writeByte(REGISTRATION_FAILED_BYTE);
+            ctx.channel().writeAndFlush(buf);
+            System.out.println("Такой пользователь существует");
+        }else {
+            if(SqlClient.registration(login, pass)){
+                buf = ByteBufAllocator.DEFAULT.directBuffer(1);
+                buf.writeByte(REGISTRATION_OK_BYTE);
+                ctx.channel().writeAndFlush(buf);
+            }
+        }
+
     }
 
     private static void serverFileList(Channel channel, String fileList) {

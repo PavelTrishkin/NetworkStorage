@@ -78,7 +78,7 @@ public class ServerRightPanelController {
             serverFiles.clear();
             filesTable.getItems().clear();
 
-            pathField.setText("storage");
+            pathField.setText(MainController.getLogin() + " Storage");
             for (int i = 0; i < list.length; i++) {
                 files = list[i].split("SEPARATOR");
                 System.out.println("В массиве files данные: " + Arrays.toString(files));

@@ -1,4 +1,3 @@
-import handlers.ServerHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -22,15 +21,18 @@ public class ServerNetty {
                         }
                     });
             ChannelFuture f = b.bind(8189).sync();
-            System.out.println("Server start");
+            SqlClient.connect();
+            System.out.println("Сервер запущен");
             f.channel().closeFuture().sync();
         } finally {
+            SqlClient.disconnect();
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
         }
     }
 
     public static void main(String[] args) throws Exception {
+        System.out.println("Сервер запускается");
         new ServerNetty().run();
     }
 }

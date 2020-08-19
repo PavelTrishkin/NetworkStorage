@@ -47,7 +47,7 @@
     <HBox fx:id="buttonBlock" spacing="5" visible="false" managed="false">
         <Button maxWidth="Infinity" focusTraversable="false" text="Скачать файл" HBox.hgrow="ALWAYS" onAction="#btnDownloadAction" style="-fx-background-color: #b38349"/>
         <Button maxWidth="Infinity" focusTraversable="false" text="Отправить файл" HBox.hgrow="ALWAYS" onAction="#btnUploadAction" style="-fx-background-color: #b38349"/>
-<!--        <Button maxWidth="Infinity" focusTraversable="false" text="Создать папку" HBox.hgrow="ALWAYS" onAction="#btnCreateFolderAction" style="-fx-background-color: #b38349"/>-->
+        <Button maxWidth="Infinity" focusTraversable="false" text="Создать папку" HBox.hgrow="ALWAYS" onAction="#btnCreateFolderAction" style="-fx-background-color: #b38349"/>
         <Button maxWidth="Infinity" focusTraversable="false" text="Обновить список" HBox.hgrow="ALWAYS" onAction="#btnUpdateAction" style="-fx-background-color: #b38349"/>
         <Button maxWidth="Infinity" focusTraversable="false" text="Удалить файл" HBox.hgrow="ALWAYS" onAction="#btnDeleteAction" style="-fx-background-color: #b38349"/>
         <padding>
